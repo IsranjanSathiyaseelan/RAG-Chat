@@ -1,28 +1,37 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
+from app.services.llm import ask_llm
 
 app = FastAPI(
     title="PDF RAG Chat API",
-    description="RAG API for asking questions about PDF documents",
+    description="RAG API for asking questions about uploaded PDF documents",
     version="1.0.0",
 )
 
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+class LLMRequest(BaseModel):
+    question: str
+
+
+@app.get("/")
+def root():
+    return {
+        "message": "PDF RAG Chat API is running"
+    }
 
 
 @app.get("/health")
-async def health():
+def health():
     return {
-        "status": "ok",
-        "message": "PDF RAG API is running",
+        "status": "ok"
+    }
+
+
+@app.post("/api/test-llm")
+def test_llm(request: LLMRequest):
+    answer = ask_llm(request.question)
+
+    return {
+        "answer": answer
     }
