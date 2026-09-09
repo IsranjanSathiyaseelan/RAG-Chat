@@ -27,3 +27,9 @@ class Document(Base):
         back_populates="document",
         cascade="all, delete-orphan",
     )
+
+    chat_messages = relationship(
+        "ChatMessage",
+        back_populates="document",
+        cascade="all, delete-orphan",
+    )
