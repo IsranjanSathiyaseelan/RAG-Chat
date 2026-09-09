@@ -34,7 +34,7 @@ Vector Search
     ↓
 Relevant PDF Chunks
     ↓
-Groq LLM
+Gemini LLM
     ↓
 Answer + References + Token Usage
 
@@ -49,16 +49,17 @@ Python
 FastAPI
 Uvicorn
 Pydantic
+SQLAlchemy
 Database
 PostgreSQL
 pgvector
-SQLAlchemy
 Alembic
 PDF Processing
 PyMuPDF
 AI
-Groq API for LLM generation
-Embedding model/provider for vector embeddings
+Google Gemini API / Gemini AI Studio
+Gemini LLM for answer generation
+Dedicated embedding model/provider for vector embeddings
 pgvector for vector similarity search
 Rules
 1. PDF-Only Answers
@@ -73,6 +74,8 @@ I couldn't find that information in the uploaded document.
 
 
 Never invent, guess, or hallucinate information.
+
+The retrieved PDF context is the source of truth.
 
 2. Document Isolation
 
@@ -128,15 +131,15 @@ Page 8
 "Interview transcripts were analyzed..."
 
 
-References must come from the chunks actually used for generating the answer.
+References must come from chunks actually retrieved and supplied to Gemini.
 
 Do not create or fabricate references.
 
 5. Grounded Generation
 
-The Groq LLM must receive the retrieved PDF content as context.
+Gemini must receive the retrieved PDF content as context.
 
-The system prompt must clearly instruct the LLM:
+The system prompt must clearly instruct Gemini:
 
 Answer only using the provided document context.
 
@@ -151,27 +154,29 @@ Do not invent or assume information.
 
 Use the provided sources to support the answer.
 
+The provided document context is the only source of truth.
 
-The retrieved PDF context is the source of truth.
 
-6. Groq API
+The application must construct the Gemini prompt using only retrieved PDF chunks.
 
-Use the Groq API for LLM generation.
+6. Gemini API
 
-Groq API calls must be made from the FastAPI backend.
+Use the Google Gemini API through Gemini AI Studio for LLM generation.
 
-The Groq API key must never be exposed to the Next.js frontend.
+Gemini API calls must be made from the FastAPI backend.
+
+The Gemini API key must never be exposed to the Next.js frontend.
 
 Use an environment variable:
 
-GROQ_API_KEY=
+GEMINI_API_KEY=
 
 
 Never hard-code the API key.
 
-Keep Groq-specific implementation inside the service layer.
+Keep Gemini-specific implementation inside the service layer.
 
-For example:
+Recommended structure:
 
 services/
 └── llm.py
@@ -184,29 +189,31 @@ services/
 └── llm.py
 
 
-The LLM service should be responsible for communicating with Groq.
+The LLM service is responsible for communicating with Gemini.
 
 Example:
 
-from groq import Groq
 import os
 
-client = Groq(
-    api_key=os.getenv("GROQ_API_KEY")
+from dotenv import load_dotenv
+from google import genai
+
+load_dotenv()
+
+client = genai.Client(
+    api_key=os.getenv("GEMINI_API_KEY")
 )
 
 
-Do not initialize or call the Groq API directly from API route files.
+Gemini-specific code must not be placed directly inside API route files.
 
 7. Embeddings
 
-Groq is used for LLM generation.
+Gemini LLM generation and embeddings should be treated as separate responsibilities.
 
-Embeddings should use a dedicated embedding model/provider that supports generating vector embeddings.
+The embedding provider/model must be kept separate from the LLM service.
 
-The embedding provider must be kept separate from the Groq LLM service.
-
-For example:
+Recommended structure:
 
 services/
 ├── embeddings.py
@@ -231,9 +238,11 @@ Creating the user's question embedding.
 
 Do not mix embedding models between indexing and querying.
 
+If Gemini embeddings are used, use the same Gemini embedding model for both document chunks and question embeddings.
+
 8. Token Usage
 
-The application must track token usage for Groq LLM requests whenever usage information is provided by the API.
+The application must track token usage for Gemini LLM requests whenever usage information is provided by the API.
 
 At minimum, track:
 
@@ -242,7 +251,7 @@ output_tokens
 total_tokens
 
 
-Example:
+Example response:
 
 {
   "usage": {
@@ -262,13 +271,13 @@ Output: 180
 Total: 1,430
 
 
-Do not estimate token usage when actual usage information is available from Groq.
+Do not estimate token usage when actual usage information is available from Gemini.
 
 Embedding usage should also be tracked when the selected embedding provider provides usage information.
 
 9. Token Efficiency
 
-Do not send the entire PDF to the LLM for every question.
+Do not send the entire PDF to Gemini for every question.
 
 Use the RAG pipeline:
 
@@ -280,10 +289,10 @@ Vector Search
     ↓
 Relevant Chunks
     ↓
-Groq LLM
+Gemini LLM
 
 
-Only relevant retrieved chunks should be included in the LLM context.
+Only relevant retrieved chunks should be included in the Gemini context.
 
 The number of retrieved chunks should be configurable.
 
@@ -293,7 +302,7 @@ Avoid unnecessarily large prompts.
 
 If cost tracking is implemented, keep token usage separate from cost calculation.
 
-Do not hard-code AI pricing throughout the application.
+Do not hard-code Gemini pricing throughout the application.
 
 Pricing should be configurable.
 
@@ -301,7 +310,12 @@ Any calculated cost should be clearly labeled as an estimate unless it comes dir
 
 11. Security
 
-Never expose GROQ_API_KEY to the frontend.
+Never expose:
+
+GEMINI_API_KEY
+
+
+to the frontend.
 
 Keep API keys on the FastAPI server.
 
@@ -321,63 +335,98 @@ Do not expose unnecessary internal system prompts or configuration.
 
 Restrict retrieval to the authorized document.
 
-12. Code Organization
+Code Organization
 
 Keep API routes separate from business logic.
 
-Use:
+Recommended structure:
 
+app/
+├── api/
+│   └── ...
+│
+├── services/
+│   ├── pdf.py
+│   ├── chunking.py
+│   ├── embeddings.py
+│   ├── retrieval.py
+│   └── llm.py
+│
+├── models/
+│   └── ...
+│
+├── schemas/
+│   └── ...
+│
+├── db/
+│   └── ...
+│
+└── main.py
+
+Responsibilities
 api/
-    → API endpoints
+
+API endpoints and request handling.
 
 services/
-    → PDF, chunking, embeddings, retrieval and LLM logic
 
+Business logic including:
+
+PDF processing
+Text extraction
+Chunking
+Embeddings
+Retrieval
+Gemini communication
+RAG context construction
 models/
-    → Database models
+
+SQLAlchemy database models.
 
 schemas/
-    → Request and response schemas
+
+Pydantic request and response schemas.
 
 db/
-    → Database configuration
 
+Database configuration and session management.
+
+main.py
+
+FastAPI application configuration and route registration.
 
 Do not put the entire application inside main.py.
 
-main.py should primarily configure FastAPI and register routes.
+Backend Rules
 
-13. Backend Rules
+Use:
 
-Use FastAPI for the API.
-
-Use Uvicorn to run the server.
-
-Use Pydantic for request/response validation.
-
-Use SQLAlchemy for database interaction.
-
-Use PostgreSQL + pgvector for vector storage.
-
-Use Alembic for database migrations.
-
-Use PyMuPDF for PDF text extraction.
-
-Use Groq API for LLM generation.
-
-Use a dedicated embedding provider/model for embeddings.
+FastAPI for the API.
+Uvicorn to run the server.
+Pydantic for request/response validation.
+SQLAlchemy for database interaction.
+PostgreSQL + pgvector for vector storage.
+Alembic for database migrations.
+PyMuPDF for PDF processing.
+Gemini API for LLM generation.
+A dedicated embedding provider/model for embeddings.
 
 Keep AI provider logic inside service modules.
 
-Track actual Groq token usage when available.
+Track actual Gemini token usage when available.
 
 Return references with generated answers.
 
 Always scope vector retrieval to the selected document_id.
 
-14. Frontend Rules
+Frontend Rules
 
-Use Next.js with TypeScript.
+Use:
+
+Next.js
+TypeScript
+React
+Tailwind CSS
 
 Keep API communication in a dedicated API module.
 
@@ -421,7 +470,7 @@ Input: 1,250 tokens
 Output: 180 tokens
 Total: 1,430 tokens
 
-15. Database Rules
+Database Rules
 
 Use:
 
@@ -462,9 +511,9 @@ LIMIT :top_k;
 
 Never perform an unrestricted vector search across all documents.
 
-16. RAG Context Construction
+RAG Context Construction
 
-Retrieved chunks should be converted into a structured context before being sent to Groq.
+Retrieved chunks should be converted into a structured context before being sent to Gemini.
 
 Example:
 
@@ -477,22 +526,26 @@ The researchers conducted semi-structured interviews...
 Interview transcripts were analyzed...
 
 
-The LLM should be instructed to use this context as the only source of information.
+Gemini should be instructed to use this context as the only source of information.
 
-The application should preserve the relationship between:
+The application must preserve the relationship:
 
-LLM answer
-    ↓
-Retrieved chunks
-    ↓
-Document page numbers
+Gemini Answer
+     ↓
+Retrieved Chunks
+     ↓
+Document Page Numbers
 
 
 This allows references to be returned reliably.
 
-17. API Response Structure
+API Response Structure
 
-The question-answer endpoint should return enough information for the frontend to display the answer, references, and token usage.
+The question-answer endpoint should return enough information for the frontend to display:
+
+Answer
+References
+Token usage
 
 Conceptually:
 
@@ -520,15 +573,15 @@ Conceptually:
 
 Do not fabricate reference information.
 
-References must correspond to chunks actually retrieved and supplied to the LLM.
+References must correspond to chunks actually retrieved and supplied to Gemini.
 
-18. Error Handling
+Error Handling
 
-Do not expose raw provider errors to the frontend.
+Do not expose raw Gemini/provider errors to the frontend.
 
-For example, do not return:
+Do not return:
 
-groq.AuthenticationError
+google.api_core.exceptions...
 
 
 or:
@@ -543,9 +596,16 @@ Instead, return a safe API error such as:
 }
 
 
-Log detailed errors on the backend for debugging.
+Detailed errors should be logged on the backend for debugging.
 
-19. Simplicity
+Never expose:
+
+API keys
+Internal prompts
+Stack traces
+Provider credentials
+Sensitive configuration
+Simplicity
 
 Do not over-engineer the MVP.
 
@@ -559,7 +619,7 @@ PostgreSQL + pgvector
    ↓
 Embedding Provider
    ↓
-Groq API
+Gemini API
 
 
 Do not add unnecessary technologies such as:
@@ -573,7 +633,7 @@ Complex agent frameworks
 
 unless there is a clear requirement.
 
-20. Code Quality
+Code Quality
 
 Write clean and readable code.
 
@@ -597,7 +657,11 @@ Add tests for important functionality.
 
 Keep provider-specific code inside service modules.
 
-21. Agent Rules
+Keep API routes thin.
+
+Keep business logic inside services.
+
+Agent Rules
 
 When modifying the project:
 
@@ -607,17 +671,20 @@ Follow the existing project structure.
 Follow the rules in this file.
 Preserve PDF page metadata.
 Never fabricate answers.
-Always scope retrieval to the selected document.
-Keep Groq API keys out of source code.
+Always scope retrieval to the selected document_id.
+Keep Gemini API keys out of source code.
 Use environment variables for secrets.
-Track actual Groq token usage when available.
-Do not send the entire PDF to Groq unnecessarily.
+Track actual Gemini token usage when available.
+Do not send the entire PDF to Gemini unnecessarily.
 Use only retrieved PDF content for document questions.
 Do not introduce unnecessary dependencies.
 Do not introduce unnecessary architecture.
 Explain significant architectural changes.
 Keep the implementation simple and maintainable.
 Ensure generated answers can be traced back to PDF references.
+Keep Gemini-specific implementation inside service modules.
+Use the same embedding model for indexing and querying.
+Never perform vector retrieval without document_id filtering.
 Final Architecture
 
 The target MVP architecture is:
@@ -637,20 +704,22 @@ The target MVP architecture is:
         PDF Processing   Retrieval      LLM Service
               │              │              │
               ▼              ▼              ▼
-          PyMuPDF       PostgreSQL      Groq API
+          PyMuPDF       PostgreSQL      Gemini API
               │          + pgvector
               │              ▲
               ▼              │
           Chunking ──► Embeddings
 
-Core principle
+Core Principle
+
 The PDF is the source of truth.
 
 Retrieve relevant PDF chunks first.
 
-Then send only those chunks to Groq.
+Then send only those chunks to Gemini.
 
-Groq must answer using only the retrieved PDF context.
+Gemini must answer using only the retrieved PDF context.
 
-Every answer should be traceable to the retrieved
-chunks and their original page numbers.
+Every answer should be traceable to the retrieved chunks and their original page numbers.
+
+The Gemini API key must remain on the FastAPI backend and must never be exposed to the frontend.
