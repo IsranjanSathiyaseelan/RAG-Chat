@@ -29,6 +29,7 @@ def generate_embedding(text: str) -> list[float]:
             "output_dimensionality": EMBEDDING_DIMENSION,
         },
     )
+    
 
     if not response.embeddings:
         raise RuntimeError("Gemini returned no embeddings")
