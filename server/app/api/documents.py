@@ -146,3 +146,91 @@ def upload_document(
                 file_path.unlink()
             except OSError:
                 pass
+
+
+@router.get("")
+def get_documents(
+    db: Session = Depends(get_db),
+):
+    documents = (
+        db.query(Document)
+        .order_by(Document.id.desc())
+        .all()
+    )
+
+    result = []
+
+    for document in documents:
+        chunks_count = (
+            db.query(DocumentChunk)
+            .filter(
+                DocumentChunk.document_id
+                == document.id
+            )
+            .count()
+        )
+
+        pages = (
+            db.query(DocumentChunk.page_number)
+            .filter(
+                DocumentChunk.document_id
+                == document.id
+            )
+            .distinct()
+            .count()
+        )
+
+        result.append(
+            {
+                "document_id": document.id,
+                "filename": document.filename,
+                "pages": pages,
+                "chunks": chunks_count,
+            }
+        )
+
+    return result
+
+
+@router.delete("/{document_id}")
+def delete_document(
+    document_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Delete a document and its associated chunks, embeddings, and chat messages.
+    """
+    document = (
+        db.query(Document)
+        .filter(Document.id == document_id)
+        .first()
+    )
+
+    if not document:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found.",
+        )
+
+    try:
+        db.delete(document)
+        db.commit()
+
+        # Clean up local file if still present
+        file_path = UPLOAD_DIR / document.filename
+        if file_path.exists():
+            try:
+                file_path.unlink()
+            except OSError:
+                pass
+
+        return {
+            "message": "Document deleted successfully.",
+            "document_id": document_id,
+        }
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to delete the document.",
+        ) from exc
