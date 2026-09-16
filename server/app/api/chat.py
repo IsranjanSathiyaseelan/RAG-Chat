@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
+from app.models.chat import ChatMessage
 from app.models.document_chunk import DocumentChunk
 from app.schemas.chat import ChatRequest
 from app.services.llm import ask_llm
@@ -67,6 +68,19 @@ def chat(
                 }
             )
 
+        # Persist conversation to database
+        try:
+            chat_record = ChatMessage(
+                document_id=request.document_id,
+                question=request.question,
+                answer=result["answer"],
+            )
+            db.add(chat_record)
+            db.commit()
+        except Exception as db_err:
+            db.rollback()
+            print(f"Failed to persist chat message: {db_err}")
+
         return {
             "answer": result["answer"],
             "references": references,
@@ -84,3 +98,31 @@ def chat(
             status_code=500,
             detail="Unable to generate an answer at this time.",
         ) from exc
+
+
+@router.get("/{document_id}")
+def get_chat_history(
+    document_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Get all previous chat messages for a specific document.
+    """
+    messages = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.document_id == document_id)
+        .order_by(ChatMessage.created_at.asc(), ChatMessage.id.asc())
+        .all()
+    )
+
+    return [
+        {
+            "id": message.id,
+            "document_id": message.document_id,
+            "question": message.question,
+            "answer": message.answer,
+            "created_at": message.created_at.isoformat() if message.created_at else None,
+        }
+        for message in messages
+    ]
+
