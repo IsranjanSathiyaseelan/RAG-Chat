@@ -178,8 +178,8 @@ export default function PdfUpload({ onUploaded }: PdfUploadProps) {
             isBusy
               ? "opacity-60 cursor-not-allowed border-zinc-200 bg-zinc-50"
               : dragActive
-                ? "border-violet-500 bg-violet-50/70"
-                : "border-zinc-200 bg-white hover:border-violet-300 hover:bg-violet-50/40"
+                ? "border-zinc-500 bg-zinc-50/70"
+                : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50/40"
           }
         `}
       >
@@ -194,7 +194,7 @@ export default function PdfUpload({ onUploaded }: PdfUploadProps) {
         />
 
         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-100 transition-transform duration-200 hover:scale-105">
-          <UploadCloud size={30} className="text-violet-600" />
+          <UploadCloud size={30} className="text-zinc-600" />
         </div>
 
         <h3 className="text-lg font-semibold text-zinc-900">Upload your PDF</h3>
@@ -264,25 +264,25 @@ export default function PdfUpload({ onUploaded }: PdfUploadProps) {
           )}
 
           {status === "processing" && (
-            <div className="mt-4 rounded-xl border border-violet-100 bg-violet-50/60 p-4">
+            <div className="mt-4 rounded-xl border border-zinc-100 bg-zinc-50/60 p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-100">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100">
                   <Sparkles
                     size={18}
-                    className="animate-spin text-violet-600"
+                    className="animate-spin text-zinc-600"
                   />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-violet-900">
+                    <p className="text-xs font-semibold text-zinc-900">
                       Processing document...
                     </p>
-                    <span className="text-[11px] font-medium text-violet-700">
+                    <span className="text-[11px] font-medium text-zinc-700">
                       Extracting & Embedding
                     </span>
                   </div>
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-violet-200">
-                    <div className="h-full w-2/3 animate-pulse rounded-full bg-violet-600" />
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
+                    <div className="h-full w-2/3 animate-pulse rounded-full bg-zinc-600" />
                   </div>
                 </div>
               </div>
@@ -300,9 +300,9 @@ export default function PdfUpload({ onUploaded }: PdfUploadProps) {
             className="
               mt-4 flex w-full items-center
               justify-center gap-2 rounded-xl
-              bg-violet-600 px-4 py-3
+              bg-zinc-600 px-4 py-3
               text-sm font-semibold text-white
-              transition hover:bg-violet-700
+              transition hover:bg-zinc-700
               disabled:cursor-not-allowed
               disabled:opacity-60
             "

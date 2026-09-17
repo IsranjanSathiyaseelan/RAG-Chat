@@ -175,7 +175,7 @@ export default function Chat({ documentId }: ChatProps) {
           {loadingHistory ? (
             /* Loading previous chats */
             <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-600">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-800">
                 <Loader2 size={24} className="animate-spin" />
               </div>
               <p className="mt-4 text-sm font-semibold text-zinc-800">
@@ -210,8 +210,8 @@ export default function Chat({ documentId }: ChatProps) {
             /* Empty chat state */
             <div className="flex min-h-[55vh] items-center justify-center">
               <div className="w-full max-w-2xl text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100">
-                  <Bot size={28} className="text-violet-600" />
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100">
+                  <Bot size={28} className="text-zinc-800" />
                 </div>
 
                 <h2 className="mt-5 text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
@@ -236,12 +236,12 @@ export default function Chat({ documentId }: ChatProps) {
                         text-zinc-700
                         shadow-sm
                         transition
-                        hover:border-violet-300
+                        hover:border-zinc-300
                         hover:bg-violet-50/50
                       "
                     >
                       <div className="mb-2 flex items-center gap-2">
-                        <Sparkles size={15} className="text-violet-500" />
+                        <Sparkles size={15} className="text-zinc-500" />
                         <span className="font-medium">Suggested question</span>
                       </div>
                       {suggestion}
@@ -259,21 +259,21 @@ export default function Chat({ documentId }: ChatProps) {
 
               {loading && (
                 <div className="flex gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-100">
-                    <Bot size={18} className="text-violet-600" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
+                    <Bot size={18} className="text-zinc-900" />
                   </div>
 
                   <div className="rounded-2xl rounded-bl-md border border-zinc-200 bg-white px-5 py-4 shadow-sm">
                     <div className="flex items-center gap-1.5">
-                      <span className="h-2 w-2 animate-pulse-dot rounded-full bg-violet-500" />
+                      <span className="h-2 w-2 animate-pulse-dot rounded-full bg-zinc-900" />
                       <span
-                        className="h-2 w-2 animate-pulse-dot rounded-full bg-violet-500"
+                        className="h-2 w-2 animate-pulse-dot rounded-full bg-zinc-900"
                         style={{
                           animationDelay: "0.2s",
                         }}
                       />
                       <span
-                        className="h-2 w-2 animate-pulse-dot rounded-full bg-violet-500"
+                        className="h-2 w-2 animate-pulse-dot rounded-full bg-zinc-900"
                         style={{
                           animationDelay: "0.4s",
                         }}
@@ -298,7 +298,7 @@ export default function Chat({ documentId }: ChatProps) {
 
       <div className="border-t border-zinc-200 bg-white/90 px-4 py-4 backdrop-blur sm:px-8">
         <form onSubmit={handleSubmit} className="mx-auto max-w-4xl">
-          <div className="flex items-end gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-2 shadow-sm focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100">
+          <div className="flex items-end gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-2 shadow-sm focus-within:border-zinc-400 focus-within:ring-2 focus-within:ring-violet-100">
             <textarea
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
@@ -335,10 +335,10 @@ export default function Chat({ documentId }: ChatProps) {
                 flex h-11 w-11
                 shrink-0 items-center
                 justify-center rounded-xl
-                bg-violet-600
+                bg-zinc-600
                 text-white
                 transition
-                hover:bg-violet-700
+                hover:bg-zinc-700
                 disabled:cursor-not-allowed
                 disabled:bg-zinc-300
               "

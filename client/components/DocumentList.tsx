@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { BookOpen, FileText, Trash2 } from "lucide-react";
+import { Plus, FileText, Trash2 } from "lucide-react";
 import { DocumentSummary } from "@/types";
 
 interface DocumentListProps {
@@ -21,25 +21,24 @@ export default function DocumentList({
 }: DocumentListProps) {
   return (
     <>
-      {/* Workspace button */}
+      {/* Workspace button / New Chat */}
       <button
         type="button"
         onClick={onNewDocument}
         className="
-          w-full rounded-xl
-          bg-white/8 px-3 py-3
+          w-full rounded-xl border border-zinc-800
+          bg-zinc-900 px-3 py-3
           text-left transition
-          hover:bg-white/10
+          hover:border-zinc-700 hover:bg-zinc-800
         "
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-600/20">
-            <BookOpen size={17} className="text-violet-400" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-800 text-zinc-300">
+            <Plus size={17} />
           </div>
 
           <div>
-            <p className="text-sm font-medium">PDF Assistant</p>
-            <p className="text-[11px] text-white/40">Document Q&A</p>
+            <p className="text-sm font-medium text-zinc-200">New Chat</p>
           </div>
         </div>
       </button>
@@ -47,16 +46,16 @@ export default function DocumentList({
       {/* Documents */}
       <div className="mt-7">
         <div className="mb-3 flex items-center justify-between px-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">
             Documents
           </p>
-          <span className="text-[10px] text-white/30">{documents.length}</span>
+          <span className="text-[10px] text-zinc-500">{documents.length}</span>
         </div>
 
         {documents.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-white/10 px-3 py-5 text-center">
-            <FileText size={18} className="mx-auto text-white/20" />
-            <p className="mt-2 text-[11px] text-white/30">No documents yet</p>
+          <div className="rounded-xl border border-dashed border-zinc-800 px-3 py-5 text-center">
+            <FileText size={18} className="mx-auto text-zinc-500" />
+            <p className="mt-2 text-[11px] text-zinc-400">No documents yet</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -71,8 +70,8 @@ export default function DocumentList({
                     group flex items-center justify-between rounded-xl border p-2.5 transition
                     ${
                       isSelected
-                        ? "border-violet-500/40 bg-violet-500/15"
-                        : "border-transparent bg-white/5 hover:bg-white/8"
+                        ? "border-zinc-700 bg-zinc-800/90 text-white"
+                        : "border-zinc-800/40 bg-zinc-900/60 hover:border-zinc-700/60 hover:bg-zinc-800/50 text-zinc-300"
                     }
                   `}
                 >
@@ -84,22 +83,17 @@ export default function DocumentList({
                     <div
                       className={`
                         flex h-9 w-9 shrink-0 items-center justify-center rounded-lg
-                        ${isSelected ? "bg-violet-500/20" : "bg-white/5"}
+                        ${isSelected ? "bg-zinc-700 text-white" : "bg-zinc-800 text-zinc-400"}
                       `}
                     >
-                      <FileText
-                        size={16}
-                        className={
-                          isSelected ? "text-violet-400" : "text-white/40"
-                        }
-                      />
+                      <FileText size={16} />
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-medium text-white/90">
+                      <p className="truncate text-xs font-medium text-zinc-200">
                         {item.filename}
                       </p>
-                      <p className="mt-0.5 text-[10px] text-white/35">
+                      <p className="mt-0.5 text-[10px] text-zinc-400">
                         {item.pages} pages · {item.chunks} chunks
                       </p>
                     </div>
@@ -113,7 +107,7 @@ export default function DocumentList({
                     }}
                     aria-label={`Delete ${item.filename}`}
                     className="
-                      ml-2 rounded-lg p-2 text-white/30 transition
+                      ml-2 rounded-lg p-2 text-zinc-400 transition
                       hover:bg-red-500/20 hover:text-red-400
                       focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-red-400
                     "

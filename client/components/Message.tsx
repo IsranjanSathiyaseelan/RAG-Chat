@@ -21,8 +21,8 @@ export default function Message({ message }: MessageProps) {
       `}
     >
       {!isUser && (
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-100">
-          <Bot size={18} className="text-violet-600" />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
+          <Bot size={18} className="text-zinc-800" />
         </div>
       )}
 

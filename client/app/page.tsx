@@ -8,6 +8,7 @@ import DeleteDocumentModal from "@/components/DeleteDocumentModal";
 import DocumentSidebar from "@/components/DocumentSidebar";
 import EmptyDocumentState from "@/components/EmptyDocumentState";
 import Header from "@/components/Header";
+import Loading from "@/components/Loading";
 import MobileDrawer from "@/components/MobileDrawer";
 import { useToast } from "@/components/Toast";
 
@@ -161,23 +162,7 @@ export default function Home() {
   // --------------------------------------------------
 
   if (loadingDocuments) {
-    return (
-      <main className="flex h-screen items-center justify-center bg-zinc-100">
-        <div className="text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100">
-            <Sparkles size={26} className="animate-pulse text-violet-600" />
-          </div>
-
-          <p className="mt-4 text-sm font-medium text-zinc-700">
-            Loading your documents...
-          </p>
-
-          <p className="mt-1 text-xs text-zinc-400">
-            Connecting to your workspace
-          </p>
-        </div>
-      </main>
-    );
+    return <Loading />;
   }
 
   return (
