@@ -261,7 +261,3 @@ RAG-Chat/
 Full interactive API documentation is available at `http://127.0.0.1:8000/docs` when the backend is running.
 
 ---
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
