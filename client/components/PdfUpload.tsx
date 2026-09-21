@@ -7,16 +7,14 @@ import {
   CheckCircle2,
   FileText,
   Loader2,
-  Sparkles,
+  LoaderCircle,
   Upload,
   UploadCloud,
   X,
 } from "lucide-react";
 
 import { uploadDocument } from "@/lib/api";
-
 import { UploadDocumentResponse } from "@/types";
-
 import { useToast } from "@/components/Toast";
 
 interface PdfUploadProps {
@@ -267,7 +265,7 @@ export default function PdfUpload({ onUploaded }: PdfUploadProps) {
             <div className="mt-4 rounded-xl border border-zinc-100 bg-zinc-50/60 p-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100">
-                  <Sparkles
+                  <LoaderCircle
                     size={18}
                     className="animate-spin text-zinc-600"
                   />
