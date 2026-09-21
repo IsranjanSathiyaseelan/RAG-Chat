@@ -49,8 +49,22 @@ export default function Home() {
           setDocument(result[0]);
         }
       } catch (error: unknown) {
-        console.error("Failed to load documents:", error);
-        toast.error("Failed to load documents. Please check your connection.");
+        // Server-unavailable is an expected connection state, not a code error.
+        // Use console.info so it doesn't pollute the error log.
+        const isUnavailable =
+          typeof error === "object" &&
+          error !== null &&
+          (error as Record<string, unknown>).serverUnavailable === true;
+        if (isUnavailable) {
+          console.info("Backend unavailable:", (error as Error).message);
+        } else {
+          console.error("Failed to load documents:", error);
+        }
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to load documents. Please check your connection.";
+        toast.error(message);
       } finally {
         setLoadingDocuments(false);
       }

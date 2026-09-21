@@ -22,7 +22,6 @@ client = genai.Client(
 
 MODEL_NAME = "gemini-3.1-flash-lite"
 
-
 SYSTEM_INSTRUCTION = """
 You are a PDF question-answering assistant.
 

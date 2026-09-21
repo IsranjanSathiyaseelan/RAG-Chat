@@ -15,6 +15,24 @@ const api = axios.create({
     "http://127.0.0.1:8000",
 });
 
+// When the backend is unreachable (no response at all), mark the error with a
+// flag so callers can treat it as an expected connection state rather than an
+// unexpected exception. Normal API errors (400, 401, 404, 500 …) are passed
+// through unchanged so all existing per-call error handling is unaffected.
+export const SERVER_UNAVAILABLE_MESSAGE = "Server is not working.";
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (!error.response) {
+      // Tag the error as an expected "server down" state, not a code bug.
+      error.serverUnavailable = true;
+      error.message = SERVER_UNAVAILABLE_MESSAGE;
+    }
+    return Promise.reject(error);
+  }
+);
+
 export async function getDocuments(): Promise<
   DocumentSummary[]
 > {
@@ -87,4 +105,4 @@ export async function askQuestion(
   return response.data;
 }
 
-export default api;
+export default api;
