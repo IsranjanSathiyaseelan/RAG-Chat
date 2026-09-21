@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Plus, FileText, Trash2 } from "lucide-react";
 import { DocumentSummary } from "@/types";
 

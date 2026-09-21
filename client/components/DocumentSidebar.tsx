@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import Image from "next/image";
 import { SquarePen, FileText, Trash2, Cpu } from "lucide-react";
 import { DocumentSummary } from "@/types";

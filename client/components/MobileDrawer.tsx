@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { SquarePen, X, FileText, Plus, Trash2 } from "lucide-react";
 import { DocumentSummary } from "@/types";

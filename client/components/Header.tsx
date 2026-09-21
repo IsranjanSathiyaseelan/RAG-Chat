@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-import { Menu, Plus, Trash2 } from "lucide-react";
 import { DocumentSummary } from "@/types";
 
 interface HeaderProps {

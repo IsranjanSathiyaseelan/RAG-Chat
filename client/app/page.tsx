@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, FileText, Layers3, Sparkles } from "lucide-react";
-
 import Chat from "@/components/Chat";
 import DeleteDocumentModal from "@/components/DeleteDocumentModal";
 import DocumentSidebar from "@/components/DocumentSidebar";

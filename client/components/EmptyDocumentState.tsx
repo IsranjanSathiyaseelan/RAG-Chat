@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import PdfUpload from "./PdfUpload";
 import { UploadDocumentResponse } from "@/types";
 
