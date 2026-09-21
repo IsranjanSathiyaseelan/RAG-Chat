@@ -9,36 +9,30 @@ import {
   UploadDocumentResponse,
 } from "@/types";
 
+import { ENDPOINTS } from "./endpoints";
+
 const api = axios.create({
-  baseURL:
-    process.env.NEXT_PUBLIC_API_URL
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
 
-// When the backend is unreachable (no response at all), mark the error with a
-// flag so callers can treat it as an expected connection state rather than an
-// unexpected exception. Normal API errors (400, 401, 404, 500 …) are passed
-// through unchanged so all existing per-call error handling is unaffected.
 export const SERVER_UNAVAILABLE_MESSAGE = "Server is not working.";
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (!error.response) {
-      // Tag the error as an expected "server down" state, not a code bug.
       error.serverUnavailable = true;
       error.message = SERVER_UNAVAILABLE_MESSAGE;
     }
+
     return Promise.reject(error);
   }
 );
 
-export async function getDocuments(): Promise<
-  DocumentSummary[]
-> {
-  const response =
-    await api.get<DocumentSummary[]>(
-      "/api/documents"
-    );
+export async function getDocuments(): Promise<DocumentSummary[]> {
+  const response = await api.get<DocumentSummary[]>(
+    ENDPOINTS.DOCUMENTS
+  );
 
   return response.data;
 }
@@ -51,21 +45,21 @@ export async function uploadDocument(
 
   formData.append("file", file);
 
-  const response =
-    await api.post<UploadDocumentResponse>(
-      "/api/documents/upload",
-      formData,
-      {
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total && onUploadProgress) {
-            const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
-            onUploadProgress(percentCompleted);
-          }
-        },
-      }
-    );
+  const response = await api.post<UploadDocumentResponse>(
+    ENDPOINTS.UPLOAD_DOCUMENT,
+    formData,
+    {
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total && onUploadProgress) {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+
+          onUploadProgress(percentCompleted);
+        }
+      },
+    }
+  );
 
   return response.data;
 }
@@ -73,10 +67,9 @@ export async function uploadDocument(
 export async function deleteDocument(
   documentId: number
 ): Promise<DeleteDocumentResponse> {
-  const response =
-    await api.delete<DeleteDocumentResponse>(
-      `/api/documents/${documentId}`
-    );
+  const response = await api.delete<DeleteDocumentResponse>(
+    ENDPOINTS.DELETE_DOCUMENT(documentId)
+  );
 
   return response.data;
 }
@@ -84,10 +77,9 @@ export async function deleteDocument(
 export async function getChatHistory(
   documentId: number
 ): Promise<ChatHistoryItem[]> {
-  const response =
-    await api.get<ChatHistoryItem[]>(
-      `/api/chat/${documentId}`
-    );
+  const response = await api.get<ChatHistoryItem[]>(
+    ENDPOINTS.CHAT_HISTORY(documentId)
+  );
 
   return response.data;
 }
@@ -95,11 +87,10 @@ export async function getChatHistory(
 export async function askQuestion(
   data: ChatRequest
 ): Promise<ChatResponse> {
-  const response =
-    await api.post<ChatResponse>(
-      "/api/chat",
-      data
-    );
+  const response = await api.post<ChatResponse>(
+    ENDPOINTS.CHAT,
+    data
+  );
 
   return response.data;
 }
