@@ -34,23 +34,6 @@ export default function Header({
 
       {/* Right-side actions */}
       <div className="flex shrink-0 items-center gap-2">
-        {/* New document */}
-        <button
-          type="button"
-          onClick={onNewDocument}
-          className="
-            hidden items-center rounded-lg
-            border border-zinc-200
-            bg-white px-3 py-2
-            text-sm font-medium text-zinc-700
-            transition-colors
-            hover:border-zinc-300
-            hover:bg-zinc-50
-            sm:flex
-          "
-        >
-          New document
-        </button>
 
         {/* Delete current document */}
         {document && (
