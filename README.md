@@ -1,74 +1,120 @@
-﻿# RAG-Chat
+# RAG-Chat
 
-> A full-stack **Retrieval-Augmented Generation (RAG)** application that lets you upload PDF documents and ask natural-language questions about them — powered by **Google Gemini**, **pgvector**, and **Next.js**.
+> A full-stack **Retrieval-Augmented Generation (RAG)** application that lets you upload PDF documents and ask natural-language questions about them — powered by **Google Gemini**, **pgvector**, **Docker**, **Kubernetes**, and **Next.js**.
 
 ---
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Prerequisites](#prerequisites)
-- [Getting Started](#getting-started)
-  - [1. Clone the Repository](#1-clone-the-repository)
-  - [2. Backend Setup](#2-backend-setup)
-  - [3. Frontend Setup](#3-frontend-setup)
-- [Environment Variables](#environment-variables)
-- [Project Structure](#project-structure)
-- [API Reference](#api-reference)
-- [License](#license)
+* [Overview](#overview)
+* [Features](#features)
+* [Architecture](#architecture)
+* [Tech Stack](#tech-stack)
+* [Prerequisites](#prerequisites)
+* [Getting Started](#getting-started)
+
+  * [1. Clone the Repository](#1-clone-the-repository)
+  * [2. Run with Docker Compose](#2-run-with-docker-compose)
+  * [3. Run with Kubernetes](#3-run-with-kubernetes)
+  * [4. Run Manually](#4-run-manually)
+* [Environment Variables](#environment-variables)
+* [Project Structure](#project-structure)
+* [API Reference](#api-reference)
+* [License](#license)
 
 ---
 
 ## Overview
 
-RAG-Chat allows users to upload PDF files and interact with their content through a conversational interface. Instead of relying on general knowledge, every answer is grounded in the actual text of the uploaded document — with source page references included in every response.
+RAG-Chat allows users to upload PDF files and interact with their content through a conversational interface.
+
+Instead of relying on general knowledge, every answer is grounded in the actual text of the uploaded document, with source page references included in responses.
+
+The application consists of:
+
+* **Next.js frontend** for the chat interface
+* **FastAPI backend** for the RAG pipeline
+* **PostgreSQL + pgvector** for document storage and vector similarity search
+* **Google Gemini** for embeddings and answer generation
+* **Docker** for containerized development and deployment
+* **Kubernetes** for container orchestration
 
 ---
 
 ## Features
 
-- 📄 **PDF Upload** — Upload PDFs up to 10 MB via drag-and-drop or file picker
-- 🔍 **Semantic Search** — Chunks are embedded with Google Gemini and stored in pgvector for fast similarity retrieval
-- 🤖 **Grounded Answers** — Responses are generated strictly from retrieved document content, with page and chunk references
-- 💬 **Persistent Chat History** — Previous conversations per document are stored in PostgreSQL and restored on reload
-- 🗂️ **Multi-Document Support** — Manage and switch between multiple uploaded documents
-- 📱 **Responsive UI** — Fully responsive layout with mobile drawer navigation
-- ⚡ **Graceful Error Handling** — Clear feedback when the backend is unavailable, without leaking raw errors
+* 📄 **PDF Upload** — Upload PDFs up to 10 MB via drag-and-drop or file picker
+* 🔍 **Semantic Search** — Chunks are embedded with Google Gemini and stored in pgvector for similarity retrieval
+* 🤖 **Grounded Answers** — Responses are generated from retrieved document content
+* 💬 **Persistent Chat History** — Previous conversations per document are stored in PostgreSQL
+* 🗂️ **Multi-Document Support** — Manage and switch between multiple uploaded documents
+* 📱 **Responsive UI** — Fully responsive layout with mobile drawer navigation
+* ⚡ **Graceful Error Handling** — Clear feedback when the backend is unavailable
+* 🐳 **Docker Support** — Frontend, backend, and PostgreSQL can be containerized
+* ☸️ **Kubernetes Support** — Frontend, backend, and PostgreSQL can be deployed as Kubernetes workloads
 
 ---
 
 ## Architecture
 
+### Application Architecture
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                         Browser                             │
+│                      Next.js Frontend                       │
+│                                                             │
+│       PDF Upload ──► Chat UI ──► Document Sidebar           │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               │ HTTP
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     FastAPI Backend                         │
+│                                                             │
+│  POST /api/documents/upload                                 │
+│      │                                                      │
+│      ├── PyMuPDF → Extract PDF text                         │
+│      ├── Chunk document                                     │
+│      ├── Gemini → Generate embeddings                       │
+│      └── pgvector → Store document vectors                  │
+│                                                             │
+│  POST /api/chat                                             │
+│      │                                                      │
+│      ├── Embed user question                                │
+│      ├── pgvector similarity search                         │
+│      ├── Retrieve relevant document chunks                  │
+│      └── Gemini → Generate grounded answer                  │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               │ SQLAlchemy + psycopg
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 PostgreSQL + pgvector                       │
+│                                                             │
+│       documents  │  document_chunks  │  chat_history        │
+└─────────────────────────────────────────────────────────────┘
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     Browser (Next.js)                   │
-│  Upload PDF ──► Chat UI ──► Document Sidebar            │
-└──────────────────────┬──────────────────────────────────┘
-                       │ HTTP (Axios)
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│                  FastAPI Backend                         │
-│                                                         │
-│  POST /api/documents/upload                             │
-│    └─ PyMuPDF → chunk text → Gemini embed → pgvector   │
-│                                                         │
-│  POST /api/chat                                         │
-│    └─ embed question → pgvector similarity search       │
-│       → Gemini generate answer → store in DB           │
-│                                                         │
-│  GET  /api/documents     GET  /api/chat/{doc_id}       │
-│  DELETE /api/documents/{id}                             │
-└──────────────────┬──────────────────────────────────────┘
-                   │ SQLAlchemy + psycopg
-                   ▼
-┌─────────────────────────────────────────────────────────┐
-│         PostgreSQL + pgvector extension                 │
-│  Tables: documents · chunks · chat_history              │
-└─────────────────────────────────────────────────────────┘
+
+### Container Architecture
+
+```text
+                    Kubernetes Cluster
+                           │
+             ┌─────────────┴─────────────┐
+             │                           │
+      Frontend Pod(s)              Backend Pod(s)
+       Next.js                     FastAPI
+             │                           │
+             │                           │
+             └──────────────┬────────────┘
+                            │
+                            ▼
+                    PostgreSQL Pod
+                      + pgvector
 ```
+
+Kubernetes Services provide stable networking between the application components while allowing pods to be recreated or scaled independently.
 
 ---
 
@@ -76,188 +122,584 @@ RAG-Chat allows users to upload PDF files and interact with their content throug
 
 ### Frontend
 
-| Technology | Purpose |
-|---|---|
-| [Next.js 16](https://nextjs.org) | React framework with App Router |
-| [React 19](https://react.dev) | UI library |
-| [TypeScript](https://www.typescriptlang.org) | Static typing |
-| [Tailwind CSS v4](https://tailwindcss.com) | Utility-first styling |
-| [Axios](https://axios-http.com) | HTTP client with interceptors |
-| [Lucide React](https://lucide.dev) | Icon library |
+| Technology      | Purpose                         |
+| --------------- | ------------------------------- |
+| Next.js 16      | React framework with App Router |
+| React 19        | UI library                      |
+| TypeScript      | Static typing                   |
+| Tailwind CSS v4 | Utility-first styling           |
+| Axios           | HTTP client                     |
+| Lucide React    | Icon library                    |
 
 ### Backend
 
-| Technology | Purpose |
-|---|---|
-| [FastAPI](https://fastapi.tiangolo.com) | Async REST API framework |
-| [Google Gemini (`google-genai`)](https://ai.google.dev) | Text embedding & generation |
-| [PostgreSQL + pgvector](https://github.com/pgvector/pgvector) | Vector similarity search |
-| [SQLAlchemy 2](https://www.sqlalchemy.org) | ORM & database management |
-| [Alembic](https://alembic.sqlalchemy.org) | Database migrations |
-| [PyMuPDF](https://pymupdf.readthedocs.io) | PDF parsing & text extraction |
-| [Uvicorn](https://www.uvicorn.org) | ASGI server |
-| [Python 3.14+](https://www.python.org) | Runtime |
+| Technology            | Purpose                       |
+| --------------------- | ----------------------------- |
+| FastAPI               | Async REST API framework      |
+| Google Gemini         | Text embedding & generation   |
+| PostgreSQL + pgvector | Vector similarity search      |
+| SQLAlchemy 2          | ORM & database management     |
+| Alembic               | Database migrations           |
+| PyMuPDF               | PDF parsing & text extraction |
+| Uvicorn               | ASGI server                   |
+| Python 3.14+          | Runtime                       |
+
+### DevOps & Deployment
+
+| Technology             | Purpose                              |
+| ---------------------- | ------------------------------------ |
+| Docker                 | Containerization                     |
+| Docker Compose         | Local multi-container development    |
+| Kubernetes             | Container orchestration              |
+| Kubernetes Services    | Stable service-to-service networking |
+| Kubernetes Deployments | Managing application pods            |
 
 ---
 
 ## Prerequisites
 
-Before running this project, ensure you have the following installed:
+### For Manual Development
 
-- **Node.js** >= 18 and **npm**
-- **Python** >= 3.14 and **uv** (recommended) or **pip**
-- **PostgreSQL** with the **pgvector** extension enabled
-- A **Google AI API key** with access to the Gemini embedding and generation models
+Make sure you have:
+
+* **Node.js** >= 18
+* **npm**
+* **Python** >= 3.14
+* **uv** or **pip**
+* **PostgreSQL**
+* **pgvector** PostgreSQL extension
+* Google AI API key with access to the required Gemini models
+
+### For Docker
+
+* **Docker**
+* **Docker Compose**
+
+### For Kubernetes
+
+* **Docker**
+* **kubectl**
+* A running Kubernetes cluster such as:
+
+  * Minikube
+  * Docker Desktop Kubernetes
+  * Kind
+  * A cloud Kubernetes cluster
 
 ---
 
-## Getting Started
+# Getting Started
 
-### 1. Clone the Repository
+## 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/RAG-Chat.git
+git clone https://github.com/IsranjanSathiyaseelan/RAG-Chat.git
 cd RAG-Chat
 ```
 
 ---
 
-### 2. Backend Setup
+## 2. Run with Docker Compose
+
+Docker Compose provides the easiest way to run the complete application locally.
+
+The project includes:
+
+```text
+docker-compose.yml
+```
+
+Build and start the containers:
+
+```bash
+docker compose up --build
+```
+
+Run in detached mode:
+
+```bash
+docker compose up --build -d
+```
+
+Check running containers:
+
+```bash
+docker compose ps
+```
+
+View logs:
+
+```bash
+docker compose logs -f
+```
+
+Stop the application:
+
+```bash
+docker compose down
+```
+
+The application will be available at:
+
+```text
+http://localhost:3000
+```
+
+The backend API will be available at:
+
+```text
+http://localhost:8000
+```
+
+Interactive FastAPI documentation:
+
+```text
+http://localhost:8000/docs
+```
+
+---
+
+# 3. Run with Kubernetes
+
+The project includes Kubernetes manifests in the `k8s/` directory:
+
+```text
+k8s/
+├── backend.yaml
+├── frontend.yaml
+└── postgres.yaml
+```
+
+These manifests define the Kubernetes resources required to run the application components.
+
+### Start a local Kubernetes cluster
+
+For example, with Minikube:
+
+```bash
+minikube start
+```
+
+Verify the cluster:
+
+```bash
+kubectl get nodes
+```
+
+---
+
+### Build the Docker Images
+
+Build the backend image:
+
+```bash
+docker build -t rag-chat-backend ./server
+```
+
+Build the frontend image:
+
+```bash
+docker build -t rag-chat-frontend ./client
+```
+
+If using Minikube, make the images available inside the Minikube environment:
+
+```bash
+eval $(minikube docker-env)
+```
+
+Then rebuild the images:
+
+```bash
+docker build -t rag-chat-backend ./server
+docker build -t rag-chat-frontend ./client
+```
+
+---
+
+### Deploy PostgreSQL
+
+```bash
+kubectl apply -f k8s/postgres.yaml
+```
+
+Check the PostgreSQL resources:
+
+```bash
+kubectl get pods
+```
+
+---
+
+### Deploy the Backend
+
+```bash
+kubectl apply -f k8s/backend.yaml
+```
+
+Check the backend:
+
+```bash
+kubectl get pods
+kubectl get services
+```
+
+---
+
+### Deploy the Frontend
+
+```bash
+kubectl apply -f k8s/frontend.yaml
+```
+
+Check all application resources:
+
+```bash
+kubectl get pods
+kubectl get services
+```
+
+You should see resources for:
+
+```text
+PostgreSQL
+Backend
+Frontend
+```
+
+---
+
+### Check Deployment Status
+
+```bash
+kubectl get deployments
+```
+
+Check pods:
+
+```bash
+kubectl get pods
+```
+
+Check services:
+
+```bash
+kubectl get services
+```
+
+View backend logs:
+
+```bash
+kubectl logs <backend-pod-name>
+```
+
+View frontend logs:
+
+```bash
+kubectl logs <frontend-pod-name>
+```
+
+---
+
+### Access the Application
+
+If using Minikube, you can access a Kubernetes service with:
+
+```bash
+minikube service <frontend-service-name>
+```
+
+Alternatively, check the service:
+
+```bash
+kubectl get services
+```
+
+For local testing, you can also use port forwarding:
+
+```bash
+kubectl port-forward service/<frontend-service-name> 3000:3000
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
+---
+
+### Remove the Kubernetes Deployment
+
+To remove the application:
+
+```bash
+kubectl delete -f k8s/frontend.yaml
+kubectl delete -f k8s/backend.yaml
+kubectl delete -f k8s/postgres.yaml
+```
+
+---
+
+# 4. Run Manually
+
+If you don't want to use Docker or Kubernetes, you can run the frontend and backend directly.
+
+## Backend
 
 ```bash
 cd server
 ```
 
-**Install dependencies** (using `uv`):
+Install dependencies using `uv`:
 
 ```bash
 uv sync
 ```
 
-Or using `pip`:
+Or using pip:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-**Configure environment variables:**
-
-```bash
-cp .env.example .env
-# Edit .env — see the Environment Variables section below
-```
-
-**Run database migrations:**
+Configure the environment variables and run migrations:
 
 ```bash
 alembic upgrade head
 ```
 
-**Start the development server:**
+Start the backend:
 
 ```bash
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-The API will be available at `http://127.0.0.1:8000`.
-Interactive docs: `http://127.0.0.1:8000/docs`
+Backend:
+
+```text
+http://127.0.0.1:8000
+```
+
+API documentation:
+
+```text
+http://127.0.0.1:8000/docs
+```
 
 ---
 
-### 3. Frontend Setup
+## Frontend
+
+Open another terminal:
 
 ```bash
 cd client
 ```
 
-**Install dependencies:**
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-**Configure environment variables:**
-
-```bash
-cp .env.local.example .env.local
-# Edit .env.local — see the Environment Variables section below
-```
-
-**Start the development server:**
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`.
+Frontend:
+
+```text
+http://localhost:3000
+```
 
 ---
 
-## Environment Variables
+# Environment Variables
 
-### Backend — `server/.env`
+## Backend — `server/.env`
 
-| Variable | Description | Example |
-|---|---|---|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql+psycopg://user:pass@localhost:5432/ragchat` |
-| `GEMINI_API_KEY` | Google AI API key | `AIza...` |
-| `UPLOAD_DIR` | Directory for uploaded PDFs | `./uploads` |
+| Variable         | Description                  | Example                                                 |
+| ---------------- | ---------------------------- | ------------------------------------------------------- |
+| `DATABASE_URL`   | PostgreSQL connection string | `postgresql+psycopg://user:pass@localhost:5432/ragchat` |
+| `GEMINI_API_KEY` | Google AI API key            | `AIza...`                                               |
+| `UPLOAD_DIR`     | Directory for uploaded PDFs  | `./uploads`                                             |
 
-### Frontend — `client/.env.local`
+---
 
-| Variable | Description | Default |
-|---|---|---|
+## Frontend — `client/.env.local`
+
+| Variable              | Description      | Default                 |
+| --------------------- | ---------------- | ----------------------- |
 | `NEXT_PUBLIC_API_URL` | Backend base URL | `http://127.0.0.1:8000` |
 
+When running with Kubernetes, make sure the frontend's API URL points to the appropriate backend endpoint exposed by the Kubernetes configuration.
+
 ---
 
-## Project Structure
+# Project Structure
 
-```
+```text
 RAG-Chat/
-├── client/                      # Next.js frontend
-│   ├── app/
-│   │   ├── page.tsx             # Main application page
-│   │   ├── layout.tsx           # Root layout
-│   │   └── globals.css          # Global styles
-│   ├── components/
-│   │   ├── Chat.tsx             # Chat interface & message history
-│   │   ├── PdfUpload.tsx        # Drag-and-drop PDF uploader
-│   │   ├── DocumentSidebar.tsx  # Desktop document list
-│   │   ├── MobileDrawer.tsx     # Mobile navigation drawer
-│   │   ├── DocumentList.tsx     # Shared document list component
-│   │   ├── Message.tsx          # Individual chat message
-│   │   ├── Sources.tsx          # Source reference display
-│   │   ├── Header.tsx           # Top navigation bar
-│   │   ├── Toast.tsx            # Toast notification system
-│   │   └── Loading.tsx          # Full-page loading state
-│   ├── lib/
-│   │   └── api.ts               # Axios client & all API functions
-│   └── types/                   # Shared TypeScript types
 │
-└── server/                      # FastAPI backend
-    ├── app/
-    │   ├── main.py              # FastAPI app entry point
-    │   ├── api/                 # Route handlers (documents, chat)
-    │   ├── services/            # Business logic (RAG pipeline)
-    │   ├── models/              # SQLAlchemy ORM models
-    │   ├── schemas/             # Pydantic request/response schemas
-    │   └── db/                  # Database session & connection
-    └── alembic/                 # Database migration scripts
+├── client/                         # Next.js frontend
+│   ├── app/
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   │
+│   ├── components/
+│   │   ├── Chat.tsx
+│   │   ├── DeleteDocumentModal.tsx
+│   │   ├── DocumentList.tsx
+│   │   ├── DocumentSidebar.tsx
+│   │   ├── EmptyDocumentState.tsx
+│   │   ├── Header.tsx
+│   │   ├── Loading.tsx
+│   │   ├── Message.tsx
+│   │   ├── PdfUpload.tsx
+│   │   ├── Sources.tsx
+│   │   └── Toast.tsx
+│   │
+│   ├── images/
+│   │   └── logo.svg
+│   │
+│   ├── lib/
+│   │   ├── api.ts
+│   │   └── endpoints.ts
+│   │
+│   ├── public/
+│   ├── types/
+│   │   └── index.ts
+│   │
+│   ├── Dockerfile
+│   └── package.json
+│
+├── k8s/                            # Kubernetes manifests
+│   ├── backend.yaml                # Backend deployment/service
+│   ├── frontend.yaml               # Frontend deployment/service
+│   └── postgres.yaml               # PostgreSQL deployment/service
+│
+├── server/                         # FastAPI backend
+│   ├── alembic/
+│   │   ├── versions/
+│   │   ├── env.py
+│   │   └── script.py.mako
+│   │
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── chat.py
+│   │   │   └── documents.py
+│   │   │
+│   │   ├── db/
+│   │   │   └── database.py
+│   │   │
+│   │   ├── models/
+│   │   │   ├── chat.py
+│   │   │   ├── document.py
+│   │   │   └── document_chunk.py
+│   │   │
+│   │   ├── schemas/
+│   │   │   └── chat.py
+│   │   │
+│   │   ├── services/
+│   │   │   ├── chunking.py
+│   │   │   ├── embeddings.py
+│   │   │   ├── llm.py
+│   │   │   ├── pdf.py
+│   │   │   └── retrieval.py
+│   │   │
+│   │   └── main.py
+│   │
+│   ├── uploads/
+│   ├── Dockerfile
+│   ├── alembic.ini
+│   ├── pyproject.toml
+│   ├── requirements.txt
+│   └── uv.lock
+│
+├── docker-compose.yml               # Local container orchestration
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## API Reference
+# API Reference
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/documents` | List all uploaded documents |
-| `POST` | `/api/documents/upload` | Upload and process a PDF file |
-| `DELETE` | `/api/documents/{id}` | Delete a document and its data |
-| `GET` | `/api/chat/{document_id}` | Get chat history for a document |
-| `POST` | `/api/chat` | Ask a question about a document |
+| Method   | Endpoint                  | Description                     |
+| -------- | ------------------------- | ------------------------------- |
+| `GET`    | `/api/documents`          | List all uploaded documents     |
+| `POST`   | `/api/documents/upload`   | Upload and process a PDF file   |
+| `DELETE` | `/api/documents/{id}`     | Delete a document and its data  |
+| `GET`    | `/api/chat/{document_id}` | Get chat history for a document |
+| `POST`   | `/api/chat`               | Ask a question about a document |
 
-Full interactive API documentation is available at `http://127.0.0.1:8000/docs` when the backend is running.
+Interactive API documentation:
+
+```text
+http://127.0.0.1:8000/docs
+```
 
 ---
+
+## Deployment Options
+
+RAG-Chat supports three ways of running the application:
+
+### Local Development
+
+```text
+Next.js
+   │
+FastAPI
+   │
+PostgreSQL + pgvector
+```
+
+### Docker Compose
+
+```text
+┌──────────────┐
+│   Frontend   │
+│   Container  │
+└──────┬───────┘
+       │
+┌──────▼───────┐
+│   Backend    │
+│   Container  │
+└──────┬───────┘
+       │
+┌──────▼─────────────┐
+│ PostgreSQL         │
+│ + pgvector         │
+│    Container       │
+└────────────────────┘
+```
+
+### Kubernetes
+
+```text
+┌──────────────────────── Kubernetes Cluster ────────────────────────┐
+│                                                                    │
+│   ┌──────────────┐       ┌──────────────┐       ┌──────────────┐  │
+│   │  Frontend    │       │   Backend    │       │ PostgreSQL   │  │
+│   │ Deployment   │──────►│ Deployment   │──────►│   + pgvector │  │
+│   │              │       │              │       │              │  │
+│   └──────────────┘       └──────────────┘       └──────────────┘  │
+│          │                       │                       │          │
+│      Service                  Service                  Service      │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+Kubernetes provides service discovery and stable networking between the frontend, backend, and database workloads while allowing application pods to be managed independently.
+
+---
+
+## License
+
+This project is intended for educational and development purposes.
