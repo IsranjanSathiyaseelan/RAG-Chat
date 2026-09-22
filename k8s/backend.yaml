@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: backend
+
+  template:
+    metadata:
+      labels:
+        app: backend
+
+    spec:
+      containers:
+        - name: backend
+          image: ragchat-backend:latest
+          imagePullPolicy: Never
+
+          ports:
+            - containerPort: 8000
+
+          env:
+            # PostgreSQL connection
+            - name: DATABASE_URL
+              value: "postgresql+psycopg://postgres:1234@postgres:5432/RAG"
+
+            # Gemini API key from Kubernetes Secret
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ragchat-secrets
+                  key: GEMINI_API_KEY
+
+            # Frontend URL
+            - name: CORS_ORIGINS
+              value: "http://localhost:3000"
+
+          # Upload files
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+
+      volumes:
+        - name: uploads
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector:
+    app: backend
+
+  ports:
+    - port: 8000
+      targetPort: 8000
+
+  type: ClusterIP
