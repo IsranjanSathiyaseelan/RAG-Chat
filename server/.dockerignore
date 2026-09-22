@@ -1,0 +1,37 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files — secrets must not go into the image
+.env
+.env.*
+
+# IDE / OS
+.idea/
+.vscode/
+*.DS_Store
+Thumbs.db
+
+# Tests / coverage
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Uploads (mounted as a volume at runtime)
+uploads/
+
+# uv lock (not needed inside the image)
+uv.lock
