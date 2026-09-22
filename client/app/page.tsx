@@ -7,7 +7,6 @@ import DocumentSidebar from "@/components/DocumentSidebar";
 import EmptyDocumentState from "@/components/EmptyDocumentState";
 import Header from "@/components/Header";
 import Loading from "@/components/Loading";
-import MobileDrawer from "@/components/MobileDrawer";
 import { useToast } from "@/components/Toast";
 
 import { deleteDocument, getDocuments } from "@/lib/api";
@@ -28,9 +27,6 @@ export default function Home() {
   const [documentToDelete, setDocumentToDelete] =
     useState<DocumentSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  // Mobile navigation drawer state
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // --------------------------------------------------
   // Load existing documents
@@ -53,15 +49,18 @@ export default function Home() {
           typeof error === "object" &&
           error !== null &&
           (error as Record<string, unknown>).serverUnavailable === true;
+
         if (isUnavailable) {
           console.info("Backend unavailable:", (error as Error).message);
         } else {
           console.error("Failed to load documents:", error);
         }
+
         const message =
           error instanceof Error
             ? error.message
             : "Failed to load documents. Please check your connection.";
+
         toast.error(message);
       } finally {
         setLoadingDocuments(false);
@@ -81,8 +80,12 @@ export default function Home() {
         setDocumentToDelete(null);
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [documentToDelete, deleting]);
 
   // --------------------------------------------------
@@ -115,7 +118,6 @@ export default function Home() {
 
   const selectDocument = (selectedDocument: DocumentSummary) => {
     setDocument(selectedDocument);
-    setMobileMenuOpen(false);
   };
 
   // --------------------------------------------------
@@ -124,7 +126,6 @@ export default function Home() {
 
   const resetDocument = () => {
     setDocument(null);
-    setMobileMenuOpen(false);
   };
 
   // --------------------------------------------------
@@ -154,15 +155,25 @@ export default function Home() {
       setDocumentToDelete(null);
     } catch (err: unknown) {
       let message = "Failed to delete document.";
+
       if (typeof err === "object" && err !== null && "response" in err) {
-        const errorData = (err as { response?: { data?: { detail?: string } } })
-          .response?.data;
+        const errorData = (
+          err as {
+            response?: {
+              data?: {
+                detail?: string;
+              };
+            };
+          }
+        ).response?.data;
+
         if (typeof errorData?.detail === "string") {
           message = errorData.detail;
         }
       } else if (err instanceof Error) {
         message = err.message;
       }
+
       toast.error(`Document deletion failure: ${message}`);
     } finally {
       setDeleting(false);
@@ -179,21 +190,10 @@ export default function Home() {
 
   return (
     <main className="flex h-screen overflow-hidden bg-zinc-100">
-      {/* Desktop Sidebar */}
+      {/* Desktop + Mobile Sidebar */}
       <DocumentSidebar
         documents={documents}
         selectedDocument={document}
-        onSelect={selectDocument}
-        onDelete={setDocumentToDelete}
-        onNewDocument={resetDocument}
-      />
-
-      {/* Mobile Drawer */}
-      <MobileDrawer
-        open={mobileMenuOpen}
-        documents={documents}
-        selectedDocument={document}
-        onClose={() => setMobileMenuOpen(false)}
         onSelect={selectDocument}
         onDelete={setDocumentToDelete}
         onNewDocument={resetDocument}
@@ -204,7 +204,6 @@ export default function Home() {
         {/* Header */}
         <Header
           document={document}
-          onOpenMobileMenu={() => setMobileMenuOpen(true)}
           onNewDocument={resetDocument}
           onDeleteDocument={() => setDocumentToDelete(document)}
         />
@@ -213,9 +212,7 @@ export default function Home() {
         {!document ? (
           <EmptyDocumentState onUploaded={handleUploaded} />
         ) : (
-          <>
-            <Chat documentId={document.document_id} />
-          </>
+          <Chat documentId={document.document_id} />
         )}
       </section>
 

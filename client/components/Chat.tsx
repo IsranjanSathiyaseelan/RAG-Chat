@@ -7,8 +7,8 @@ import {
   ArrowUp,
   Bot,
   Loader2,
+  PencilSparkles,
   RefreshCw,
-  Sparkles,
 } from "lucide-react";
 
 import { askQuestion, getChatHistory } from "@/lib/api";
@@ -241,7 +241,7 @@ export default function Chat({ documentId }: ChatProps) {
                       "
                     >
                       <div className="mb-2 flex items-center gap-2">
-                        <Sparkles size={15} className="text-zinc-500" />
+                        <PencilSparkles size={15} className="text-zinc-500" />
                         <span className="font-medium">Suggested question</span>
                       </div>
                       {suggestion}
