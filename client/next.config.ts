@@ -1,8 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Required for the Docker production image to run as a minimal standalone bundle
-  output: "standalone",
+  output: process.env.VERCEL ? undefined : "standalone",
 };
 
 export default nextConfig;
